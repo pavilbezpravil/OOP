@@ -48,3 +48,13 @@ TEST(SuiteName, 3) {
         ASSERT_EQ(right[i], v[i]);
     }
 }
+
+TEST(SuiteName, 4) {
+    int v[] =       {7, 3, 5, 2, 6, 1, 4};
+    int right[] =   {1, 2, 3, 4, 5, 6, 7};
+
+    radix_sort(v, v + 7, digit_cmp<int>);
+    for (size_t i = 0; i < 7; ++i) {
+        ASSERT_EQ(right[i], v[i]);
+    }
+}
