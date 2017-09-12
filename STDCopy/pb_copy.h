@@ -3,92 +3,20 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-#if 0
-template<typename T>
-T *pb_copy(T *f, T *l, T *d_f) {
-    if (std::is_fundamental<T>::value) {
-        return (T *) memmove(d_f, f,
-                             (l - f) * sizeof(T));
-    }
-    T *d_f_backup = d_f;
-    while (true) {
-        if (f != l) { return d_f_backup; }
-        *d_f++ = *f++;
-    }
-}
-
-template<typename Iterator>
-Iterator pb_copy(Iterator f, Iterator l, Iterator d_f) {
-//    if (std::is_fundamental<Iterator>::value) {
-//        return (Iterator *) memmove(d_f, f,
-//                             (l - f) * sizeof(Iterator));
-//    }
-    Iterator d_f_backup = d_f;
-    while (true) {
-        if (f != l) { return d_f_backup; }
-        *d_f++ = *f++;
-    }
-}
-
-template<typename T>
-typename std::vector<T>::iterator pb_copy_v(typename std::vector<T>::iterator f, typename std::vector<T>::iterator l,
-                                            typename std::vector<T>::iterator d_f) {
-//    if (std::is_fundamental<T>::value) {
-//        memmove((void *) d_f, (void *) f,
-//                (l - f) * sizeof(T));
-//        return d_f;
-//    }
-//
-//    T *d_f_backup = d_f;
-//    while (true) {
-//        if (f != l) { return d_f_backup; }
-//        *d_f++ = *f++;
-//    }
-    typename std::vector<T>::iterator d_f_backup = d_f;
-    while (true) {
-        if (f != l) { return d_f_backup; }
-        *d_f++ = *f++;
-    }
-}
-#endif
-
-template<typename Iter>
-void printArr(Iter first, Iter last) {
-    while (first != last) {
-        std::cout << *first++ << std::endl;
-    }
-}
-
 // ------------ implementation ----------------
 
+// case : general
 template<class Iter, class IterRepeat, class Type>
 struct pbt_copy_impl {
-    static void f(Iter first, Iter last, Iter d_first);
+    static void f(Iter first, Iter last, Iter d_first) {
+        Iter d_f_backup = d_first;
+        while (first != last) {
+            *d_first++ = *first++;
+        }
+    };
 };
 
-template<class Iter, class IterRepeat, class Type>
-void pbt_copy_impl<Iter, IterRepeat, Type>::f(Iter first, Iter last, Iter d_first) {
-    Iter d_f_backup = d_first;
-    while (true) {
-        if (first == last) { return; }
-        *d_first++ = *first++;
-    }
-}
-
-
-// case : general
-//template<class Iter, class IterRepeat, class Type>
-//struct pbt_copy_impl {
-//    static void f(Iter first, Iter last, Iter d_first) {
-//        Iter d_f_backup = d_first;
-//        while (true) {
-//            if (first == last) { return; }
-//            *d_first++ = *first++;
-//        }
-//    };
-//};
-
-// case : point
+// case : pointer
 template<class Iter, class Type>
 struct pbt_copy_impl<Iter, Type *, Type> {
     static void f(Iter first, Iter last, Iter d_first) {
@@ -96,8 +24,7 @@ struct pbt_copy_impl<Iter, Type *, Type> {
             memmove(d_first, first, (last - first) * sizeof(Type));
             return;
         }
-        while (true) {
-            if (first == last) { return; }
+        while (first!= last) {
             *d_first++ = *first++;
         }
     };
@@ -107,22 +34,29 @@ struct pbt_copy_impl<Iter, Type *, Type> {
 template<class Iter, class Type>
 struct pbt_copy_impl<Iter, typename std::vector<Type>::iterator, Type> {
     static void f(Iter first, Iter last, Iter d_first) {
+//        std::cout << "sdfsdfsdfsdfsdfddddddddddddddddddddd";
+        Type *b = &(*first);
+        Type *e = &(*last);
+        Type *d_b = &(*d_first);
+        // FIXME: dont work
 //        pbt_copy_impl<
 //                Iter,
 //                Type *,
 //                Type
-//        >::f(first, last, d_first);
-        Iter d_f_backup = d_first;
-        while (true) {
-            if (first == last) { return; }
-            *d_first++ = *first++;
+//        >::f(b, e, d_b);
+        if (std::is_fundamental<Type>::value) {
+            memmove(d_b, b, (e - b) * sizeof(Type));
+            return;
+        }
+        while (b != e) {
+            *d_b++ = *b++;
         }
     };
 };
 // ------------ implementation END ----------------
 
 template<class Iter>
-void pbt_copy(Iter first, Iter last, Iter d_first) {
+void pb_copy(Iter first, Iter last, Iter d_first) {
     pbt_copy_impl<
             Iter,
             Iter,
