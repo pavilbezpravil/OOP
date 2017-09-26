@@ -34,10 +34,10 @@ struct pbt_copy_impl<Iter, Type *, Type> {
 template<class Iter, class Type>
 struct pbt_copy_impl<Iter, typename std::vector<Type>::iterator, Type> {
     static void f(Iter first, Iter last, Iter d_first) {
-//        std::cout << "sdfsdfsdfsdfsdfddddddddddddddddddddd";
-        Type *b = &(*first);
-        Type *e = &(*last);
-        Type *d_b = &(*d_first);
+        Type *b = &*first;
+        Type *e = &*last;
+        Type *d_b = &*d_first;
+//        size_t size = std::distance(first, last);
         // FIXME: dont work
 //        pbt_copy_impl<
 //                Iter,
@@ -46,12 +46,13 @@ struct pbt_copy_impl<Iter, typename std::vector<Type>::iterator, Type> {
 //        >::f(b, e, d_b);
         if (std::is_fundamental<Type>::value) {
             memmove(d_b, b, (e - b) * sizeof(Type));
+//            memmove(d_b, b, size * sizeof(Type));
             return;
         }
-        while (b != e) {
-            *d_b++ = *b++;
+        while (first != last) {
+            *first++ = *last++;
         }
-    };
+    };// SFINIE
 };
 // ------------ implementation END ----------------
 

@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include "pb_copy.h"
-#include "../utils/log.h"
 
 TEST(SuiteName, 10) {
     int a[] = {1, 2, 3, 4};
@@ -10,8 +9,6 @@ TEST(SuiteName, 10) {
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(b[i], a[i]);
     }
-    PB_INFO("______________________________________");
-    PB_INFO(std::numeric_limits<int>::digits10);
 }
 
 TEST(SuiteName, 11) {

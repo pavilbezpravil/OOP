@@ -6,7 +6,7 @@
 #include <cmath>
 
 template<class RandomAccessIterator>
-void RadixSortLSD(RandomAccessIterator first, RandomAccessIterator last, int exp = 16) {
+void RadixSortLSD(RandomAccessIterator first, RandomAccessIterator last) {
     size_t arraySize = (size_t) std::distance(first, last);
     int bucket[std::numeric_limits<typename std::iterator_traits<RandomAccessIterator>::value_type>::digits10];
     int digitPosition = 1;
@@ -37,7 +37,7 @@ void RadixSortLSD(RandomAccessIterator first, RandomAccessIterator last, int exp
             randomAccessIter[i] = bucket[i];
         }
 
-        digitPosition *= exp;
+        digitPosition *= 10;
     }
 }
 
@@ -48,7 +48,6 @@ struct pb_sort_impl {
     };
 };
 
-// enable_if
 template<typename RandomAccessIterator, class Compare>
 struct pb_sort_impl<RandomAccessIterator, int, Compare> {
     static void f(RandomAccessIterator first, RandomAccessIterator last, Compare compare) {
