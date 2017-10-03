@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "pb_sort.h"
 #include <functional>
+#include <list>
 
 
 TEST(SuiteName, 1) {
@@ -18,16 +19,6 @@ TEST(SuiteName, 2) {
     std::vector<long> right =   {1, 2, 3, 4, 5, 6, 7};
 
     pb_sort(v.begin(), v.end(), std::less<int>() );
-    for (size_t i = 0; i < right.size(); ++i) {
-        ASSERT_EQ(right[i], v[i]);
-    }
-}
-
-TEST(SuiteName, 3) {
-    std::vector<char> v =       {'s', 'c', 'd', 'a', 'b'};
-    std::vector<char> right =   {'a', 'b', 'c', 'd', 's'};
-
-    pb_sort(v.begin(), v.end(), std::less<char>() );
     for (size_t i = 0; i < right.size(); ++i) {
         ASSERT_EQ(right[i], v[i]);
     }

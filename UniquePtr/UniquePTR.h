@@ -11,6 +11,15 @@ struct deleter {
     }
 };
 
+template<class T>
+struct deleterArr {
+    void operator()(T *p) {
+        if (p) {
+            delete[] p;
+        }
+    }
+};
+
 template<class Type, class TDeleter = deleter<Type>>
 class UniquePTR {
     typedef UniquePTR<Type, TDeleter> t_UniquePTR;
@@ -23,7 +32,7 @@ public: // Constructors and destructor.
     UniquePTR();
     UniquePTR(Type *pObject);
     UniquePTR(t_UniquePTR &&uniquePTR); // Move constructor.
-    ~UniquePTR();
+    virtual ~UniquePTR();
 
 public: // Assignment.
     UniquePTR &operator=(t_UniquePTR &&uniquePTR);
@@ -36,7 +45,7 @@ public: // Observers.
     TDeleter &get_deleter(); // Return a reference to the stored deleter.
     operator bool() const; // Return false if the stored pointer is null.
 public: // Modifiers.
-    void release(); // Release ownership of any stored pointer.
+    Type *release(); // Release ownership of any stored pointer.
     void reset(Type *pObject = nullptr); // Replace the stored pointer.
     void swap(t_UniquePTR &uniquePTR); // Exchange the pointer with another object.
 private: // Disable copy from lvalue.
@@ -56,7 +65,6 @@ UniquePTR<Type, TDeleter>::UniquePTR(Type *pObject) : mPtr(pObject) {
 
 template<class Type, class TDeleter>
 UniquePTR<Type, TDeleter>::UniquePTR(UniquePTR::t_UniquePTR &&uniquePTR) {
-    // TODO: norm?
     *this = uniquePTR;
 }
 
@@ -67,14 +75,13 @@ UniquePTR<Type, TDeleter>::~UniquePTR() {
 
 template<class Type, class TDeleter>
 UniquePTR<Type, TDeleter> &UniquePTR<Type, TDeleter>::operator=(UniquePTR::t_UniquePTR &&uniquePTR) {
-    mPtr = uniquePTR.get();
-    uniquePTR.mPtr = nullptr;
+    mPtr = uniquePTR.release();
     return *this;
 }
 
 template<class Type, class TDeleter>
 UniquePTR<Type, TDeleter> &UniquePTR<Type, TDeleter>::operator=(Type *pObject) {
-    release();
+    reset();
     mPtr = pObject;
     return *this;
 }
@@ -104,11 +111,11 @@ UniquePTR<Type, TDeleter>::operator bool() const {
     return mPtr != nullptr;
 }
 
-// TODO:
 template<class Type, class TDeleter>
-void UniquePTR<Type, TDeleter>::release() {
-    _del(mPtr);
+Type *UniquePTR<Type, TDeleter>::release() {
+    Type *tmp = mPtr;
     mPtr = nullptr;
+    return tmp;
 }
 
 template<class Type, class TDeleter>

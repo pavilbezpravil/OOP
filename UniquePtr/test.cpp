@@ -1,5 +1,17 @@
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "UniquePTR.h"
+
+int global_mem_alloc = 0;
+void *operator new(size_t size) {
+    ++global_mem_alloc;
+    return malloc(size);
+}
+
+void operator delete(void *ptr) {
+    --global_mem_alloc;
+    free(ptr);
+}
 
 TEST(SuiteName, baseOperation) {
     int curVal = 12;
@@ -26,10 +38,13 @@ TEST(SuiteName, swap) {
 }
 
 
-TEST(SuiteName, errorTest) {
-    // TODO:
-    UniquePTR<int> ptr{};
-//    *ptr = 12;
+TEST(SuiteName, construct) {
+    UniquePTR<int> uPtr{};
+    ASSERT_EQ(uPtr.get(), nullptr);
+
+    int *ptr = new int(42);
+    uPtr = ptr;
+    ASSERT_EQ(*uPtr, 42);
 }
 
 TEST(SuiteName, eqTest) {
@@ -47,7 +62,28 @@ TEST(SuiteName, eqTest) {
 
 }
 
-
 TEST(SuiteName, arrayDeleter) {
+    UniquePTR<std::string, deleterArr<std::string>> ptrArr(new std::string[14]);
+}
 
+
+TEST(SuiteName, release) {
+    UniquePTR<int> uPtr(new int(13));
+    int *ptr = uPtr.release();
+
+    ASSERT_EQ(uPtr.get(), nullptr);
+    ASSERT_EQ(*ptr, 13);
+    delete(ptr);
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    int mem_alloc = global_mem_alloc;
+//    std::cout << mem_alloc << std::endl;
+//    std::cout << 12 << std::endl;
+    int res = RUN_ALL_TESTS();
+//    std::cout << mem_alloc << std::endl;
+
+//    assert(global_mem_alloc == mem_alloc);
+//    return res;
 }

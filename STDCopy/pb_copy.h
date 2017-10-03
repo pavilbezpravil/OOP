@@ -35,24 +35,16 @@ template<class Iter, class Type>
 struct pbt_copy_impl<Iter, typename std::vector<Type>::iterator, Type> {
     static void f(Iter first, Iter last, Iter d_first) {
         Type *b = &*first;
-        Type *e = &*last;
         Type *d_b = &*d_first;
-//        size_t size = std::distance(first, last);
-        // FIXME: dont work
-//        pbt_copy_impl<
-//                Iter,
-//                Type *,
-//                Type
-//        >::f(b, e, d_b);
+        size_t size = std::distance(first, last);
         if (std::is_fundamental<Type>::value) {
-            memmove(d_b, b, (e - b) * sizeof(Type));
-//            memmove(d_b, b, size * sizeof(Type));
+            memmove(d_b, b, size * sizeof(Type));
             return;
         }
         while (first != last) {
-            *first++ = *last++;
+            *first++ = *d_first++;
         }
-    };// SFINIE
+    };
 };
 // ------------ implementation END ----------------
 
@@ -64,3 +56,18 @@ void pb_copy(Iter first, Iter last, Iter d_first) {
             typename std::iterator_traits<Iter>::value_type
     >::f(first, last, d_first);
 };
+
+// TODO: shouldn't look to next lines
+
+//template<class InIter, class OutIter>
+//typename std::enable_if<std::is_same<std::iterator_traits<InIter>::value_type, InIter>::value, OutIter>::type
+//pbt_copy(InIter first, InIter last, OutIter d_first) {
+//    return nullptr;
+//};
+//
+//
+//template<class InIter, class OutIter>
+//typename std::enable_if<std::is_same<std::iterator_traits<InIter>::value_type, InIter>::value, OutIter>::type
+//pbt_copy(InIter first, InIter last, OutIter d_first) {
+//    return nullptr;
+//};

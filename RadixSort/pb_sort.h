@@ -41,25 +41,14 @@ void RadixSortLSD(RandomAccessIterator first, RandomAccessIterator last) {
     }
 }
 
-template<class RandomAccessIterator, class Type, class Compare>
-struct pb_sort_impl {
-    static void f(RandomAccessIterator first, RandomAccessIterator last, Compare compare) {
-        std::sort(first, last, compare);
-    };
-};
-
-template<typename RandomAccessIterator, class Compare>
-struct pb_sort_impl<RandomAccessIterator, int, Compare> {
-    static void f(RandomAccessIterator first, RandomAccessIterator last, Compare compare) {
-        RadixSortLSD(first, last);
-    };
+template<class RandomAccessIterator, class Compare>
+typename std::enable_if<!std::is_integral<typename std::iterator_traits<RandomAccessIterator>::value_type>::value, void>::type
+pb_sort(RandomAccessIterator first, RandomAccessIterator last, Compare comp) {
+    std::sort(first, last, comp);
 };
 
 template<class RandomAccessIterator, class Compare>
-void pb_sort(RandomAccessIterator first, RandomAccessIterator last, Compare comp) {
-    pb_sort_impl<
-            RandomAccessIterator,
-            typename std::iterator_traits<RandomAccessIterator>::value_type,
-            Compare
-    >::f(first, last, comp);
+typename std::enable_if<std::is_integral<typename std::iterator_traits<RandomAccessIterator>::value_type>::value, void>::type
+pb_sort(RandomAccessIterator first, RandomAccessIterator last, Compare comp) {
+    RadixSortLSD(first, last);
 };
