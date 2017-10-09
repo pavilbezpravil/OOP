@@ -30,8 +30,8 @@ class UniquePTR {
 
 public: // Constructors and destructor.
     UniquePTR();
-    UniquePTR(Type *pObject);
-    UniquePTR(t_UniquePTR &&uniquePTR); // Move constructor.
+    explicit UniquePTR(Type *pObject);
+    UniquePTR(t_UniquePTR &&uniquePTR) noexcept; // Move constructor.
     virtual ~UniquePTR();
 
 public: // Assignment.
@@ -64,7 +64,7 @@ UniquePTR<Type, TDeleter>::UniquePTR(Type *pObject) : mPtr(pObject) {
 }
 
 template<class Type, class TDeleter>
-UniquePTR<Type, TDeleter>::UniquePTR(UniquePTR::t_UniquePTR &&uniquePTR) {
+UniquePTR<Type, TDeleter>::UniquePTR(UniquePTR::t_UniquePTR &&uniquePTR) noexcept {
     *this = uniquePTR;
 }
 
@@ -75,14 +75,15 @@ UniquePTR<Type, TDeleter>::~UniquePTR() {
 
 template<class Type, class TDeleter>
 UniquePTR<Type, TDeleter> &UniquePTR<Type, TDeleter>::operator=(UniquePTR::t_UniquePTR &&uniquePTR) {
-    mPtr = uniquePTR.release();
+    if (this != &uniquePTR) {
+        reset(uniquePTR.release());
+    }
     return *this;
 }
 
 template<class Type, class TDeleter>
 UniquePTR<Type, TDeleter> &UniquePTR<Type, TDeleter>::operator=(Type *pObject) {
-    reset();
-    mPtr = pObject;
+    reset(pObject);
     return *this;
 }
 

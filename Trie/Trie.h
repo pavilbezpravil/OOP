@@ -2,46 +2,65 @@
 
 #include <vector>
 #include "TrieIterator.h"
+#include "TrieNode.h"
 
-#define ALPHABETS 26
-#define CASE 'a'
-
-template <typename T>
-struct TrieNode {
-    TrieNode *root;
-    TrieNode *child[ALPHABETS];
-    std::vector<int> occurrences;
-};
-
-template <class T>
+template <class ValueType>
 class Trie {
-public:
-    typedef TrieIterator<T> iterator;
-//    typedef ConstTrieIterator<T> const_iterator;
-    typedef TrieIterator<const T> const_iterator;
+    typedef Trie<ValueType> t_Trie;
+    typedef TrieNode<ValueType> t_Node;
 
-    typedef T value_type;
+    typedef TrieIterator<ValueType> iterator;
+    typedef TrieIterator<const ValueType> const_iterator;
+
     typedef std::string key_type;
 
-    Trie();
+private:
+    size_t mSize;
+    t_Node mRoot;
+
+public:
+
+    Trie() : mSize(0), mRoot("", ValueType(), &mRoot) {
+
+    }
+
     template <class InputIterator> Trie(InputIterator first, InputIterator last);
-    Trie(const Trie<T> & trie);
-    ~Trie();
+    Trie(const Trie<ValueType> & trie);
 
-    Trie<T> & operator= (const Trie & trie);
+    ~Trie() {
+        clear();
+    }
 
-    iterator begin();
-    const_iterator begin() const;
+    Trie<ValueType> & operator= (const Trie & trie);
 
-    iterator end();
-    const_iterator end() const;
+    iterator begin() {
+        return ++iterator(&mRoot, CASE);
+    }
+    const_iterator begin() const { return ++const_iterator(&mRoot, CASE); }
 
-    bool empty() const; //Test whether container is empty
-    size_t size() const;
+    iterator end() { return iterator(&mRoot, CASE); }
+    const_iterator end() const { return const_iterator(&mRoot, CASE); }
 
-    value_type& operator[] (const key_type& k);
+    bool empty() const { return mSize == 0; }
+    size_t size() const { return mSize; }
 
-    std::pair<iterator,bool> insert (const key_type& k, const value_type& val);
+    ValueType& operator[] (const key_type& k);
+
+//    std::pair<iterator, bool> insert (const std::string& key, const ValueType& value) {
+    void insert (const key_type& key, const ValueType& value) {
+        t_Node *cur = &mRoot;
+        for (size_t i = 0; i < key.size(); ++i) {
+            if (!cur->getChild(key[i])) {
+                cur->operator[](key[i]) = new t_Node({key.substr(0, i + 1)}, ValueType(), cur, false);
+                cur->operator[](key[i])->getValue() = value;
+            }
+            cur = cur->getChild(key[i]);
+        }
+
+//        cur->getValue() = value;
+        cur->setIsWord(true);
+        ++mSize;
+    };
 
     template <class InputIterator> void insert (InputIterator first, InputIterator last);
 
@@ -52,12 +71,27 @@ public:
 
     void swap (Trie& trie);
 
-    void clear(); //очистить структуру
+    void clear() {
+        clearInternal(&mRoot);
+    }
 
     //найти элемент
     iterator find (const key_type& k);
     const_iterator find (const key_type& k) const;
 
     // TODO:
-//    SubTrie<T> GetSubTrie(const key_type & subKey); // получить subtree
+//    SubTrie<ValueType> GetSubTrie(const key_type & subKey); // получить subtree
+
+private:
+    void clearInternal(t_Node *node) {
+        for (char i = CASE; i < CASE + node->getChildSize(); ++i) {
+            if (node->getChild(i)) {
+                clearInternal(node->getChild(i));
+            }
+        }
+        if (node != &mRoot) {
+            delete (node);
+        }
+    }
 };
+

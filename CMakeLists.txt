@@ -21,11 +21,11 @@ set(Unique_ptr_SRC UniquePtr/UniquePTR.h UniquePtr/test.cpp)
 add_executable(Unique_ptr ${Unique_ptr_SRC})
 target_link_libraries(Unique_ptr gtest gtest_main gmock)
 
-set(SkipList_SRC SkipList/SkipList.h SkipList/test.cpp)
+set(SkipList_SRC SkipList/SkipList.h SkipList/test.cpp SkipList/SkipListNode.h SkipList/SkipListIterator.h)
 add_executable(SkipList ${SkipList_SRC})
 target_link_libraries(SkipList gtest gtest_main)
 
-set(Trie_SRC Trie/Trie.h Trie/TrieIterator.h Trie/SubTrie.h)
+set(Trie_SRC Trie/Trie.h Trie/TrieIterator.h Trie/SubTrie.h Trie/TrieNode.h Trie/test.cpp)
 add_executable(Trie ${Trie_SRC})
 target_link_libraries(Trie gtest gtest_main)
 

@@ -24,17 +24,21 @@ private:
 	t_Deleter _del;
 
     void releaseInternal() {
-        assert(linksCounter);
+        if (!linksCounter) { return; }
+        assert(*linksCounter >= 0);
         if (*linksCounter == 1) {
             _del(ptr);
-            ptr = nullptr;
-        }
-        --*linksCounter;
+			ptr = nullptr;
+			delete linksCounter;
+        } else {
+			--*linksCounter;
+		}
+		linksCounter = nullptr;
     }
 
 public: // Constructors and destructor.
 
-	MySharedPtr() : ptr(nullptr), linksCounter(new size_t(1)) {
+	MySharedPtr() : ptr(nullptr), linksCounter(nullptr) {
 
     };
 
@@ -42,47 +46,55 @@ public: // Constructors and destructor.
 
 	}
 
-	MySharedPtr(t_MySharedPtr &&uniquePTR) : ptr(uniquePTR.release()), linksCounter(uniquePTR.release()) { // Move constructor.
-
+	MySharedPtr(t_MySharedPtr &&uniquePTR) { // Move constructor.
+		releaseInternal();
+		linksCounter = uniquePTR.linksCounter;
+		ptr = uniquePTR.ptr;
 	};
 
 	MySharedPtr(const t_MySharedPtr& uniquePtr) : ptr(uniquePtr.get()), linksCounter(uniquePtr.linksCounter) {
         // TODO: ++
-        ++*linksCounter;
+        if (linksCounter) {
+            ++*linksCounter;
+        }
     }
 
 	virtual ~MySharedPtr() {
         releaseInternal();
-        assert(*linksCounter >= 0);
-        if (*linksCounter == 0) {
-            delete(linksCounter);
-        }
 	}
 
 public:
 	t_MySharedPtr& operator=(const t_MySharedPtr& uniquePtr) {
-        releaseInternal();
+        if (this != &uniquePtr) {
+            releaseInternal();
 
-        ptr = uniquePtr.get();
-        linksCounter = uniquePtr.get_linksCounter();
-        ++*linksCounter;
+            ptr = uniquePtr.ptr;
+            linksCounter = uniquePtr.linksCounter;
+            if (linksCounter) {
+                ++*linksCounter;
+            }
+        }
         return *this;
     }
 
 	t_MySharedPtr& operator=(t_MySharedPtr &&MySharedPtr) {
-        linksCounter = MySharedPtr.get_linksCounter();
-        ++*linksCounter;
-        ptr = MySharedPtr.release();
+		if (this != &MySharedPtr) {
+			releaseInternal();
+
+			linksCounter = MySharedPtr.linksCounter;
+			MySharedPtr.linksCounter = nullptr;
+			ptr = MySharedPtr.ptr;
+			MySharedPtr.ptr = nullptr;
+		}
 		return *this;
 	}
 
 	t_MySharedPtr& operator=(Type *pObject) {
-        releaseInternal();
-		ptr = pObject;
-        if (*linksCounter == 0) {
-            linksCounter = new size_t;
-        }
-        *linksCounter = 1;
+		if (ptr != pObject) {
+			releaseInternal();
+			ptr = pObject;
+            linksCounter = new size_t(1);
+		}
 		return *this;
 	}
 
@@ -111,20 +123,11 @@ public: // Observers.
 		return !ptr;
 	}
 public: // Modifiers.
-	Type *release() { // Release ownership of any stored pointer.
-        --*linksCounter;
-
-        Type *tmp = ptr;
-        ptr = nullptr;
-        return tmp;
-	}
-
 	void reset(Type *pObject = nullptr) { // Replace the stored pointer.
+		if (ptr == pObject) { return; }
+
         releaseInternal();
-        if (*linksCounter != 0) {
-            linksCounter = new size_t;
-        }
-        *linksCounter = 1;
+        linksCounter = new size_t(1);
         ptr = pObject;
 	}
 
