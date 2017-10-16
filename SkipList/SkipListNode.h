@@ -11,20 +11,19 @@ struct SkipListNode {
     typedef std::pair<const Key, ValueType> t_Value;
 
     t_Value value;
+    t_SkipListNode *mRoot;
     std::vector<t_SkipListNode *> nextNodes;
     int levels;
 
-    SkipListNode(t_Value value, int levels) : value(value), levels(levels),
+    SkipListNode(t_Value value, int levels, t_SkipListNode *root) : value(value), levels(levels), mRoot(root),
                                               nextNodes(std::vector<t_SkipListNode *>(levels)) {
         for (auto &&node : nextNodes) {
             node = nullptr;
         }
     }
 
-    SkipListNode() = default;
-
-    static SkipListNode<Key, ValueType> NIL(const Key &key, int levels) {
-        return t_SkipListNode( t_Value(key, ValueType()) , levels);
+    static SkipListNode<Key, ValueType> NIL(const Key &key, int levels, t_SkipListNode *root) {
+        return t_SkipListNode( t_Value(key, ValueType()) , levels, root);
     };
 
     virtual ~SkipListNode() {

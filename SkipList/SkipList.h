@@ -10,16 +10,19 @@
 
 template <typename Key,
         typename ValueType,
-        int MAX_LEVELS = 4,
+        int MAX_LEVELS = 2,
         typename Compare = std::less<Key>,
-        typename Alloc = std::allocator<std::pair<const Key,ValueType> > >
+        typename Alloc = std::allocator<SkipListNode<Key, ValueType> > >
 class SkipList {
+public:
+    typedef SkipList<Key, ValueType, MAX_LEVELS, Compare, Alloc>    t_SkipList;
+    typedef SkipListNode<Key, ValueType>    t_Node;
+    typedef typename t_Node::t_Value        t_Value;
+    typedef SkipListIterator<Key, ValueType>                iterator;
+    typedef SkipListConstIterator<Key, ValueType>           const_iterator;
+    typedef SkipListReverseIterator<Key, ValueType>         reverse_iterator;
+    typedef SkipListConstReverseIterator<Key, ValueType>    const_reverse_iterator;
 private:
-    typedef SkipList<Key, ValueType, MAX_LEVELS, Compare, Alloc> t_SkipList;
-    typedef SkipListNode<Key, ValueType> t_Node;
-    typedef typename t_Node::t_Value t_Value;
-    typedef SkipListIterator<Key, ValueType>        iterator;
-    typedef SkipListIterator<Key, const ValueType>  const_iterator;
 
     Alloc mAlloc;
     Compare mCompare;
@@ -29,114 +32,86 @@ private:
     size_t mSize;
 
 public:
-    // TODO: key?
-    SkipList() : mRoot(t_Node(t_Value(std::numeric_limits<Key>::min(), ValueType()) , MAX_LEVELS)),
-                mNil(t_Node::NIL(std::numeric_limits<Key>::max(), MAX_LEVELS)) , mSize(0) {
+    SkipList() : mRoot(t_Node(t_Value(std::numeric_limits<Key>::min(), ValueType()), MAX_LEVELS, nullptr)),
+                mNil(t_Node::NIL(std::numeric_limits<Key>::max(), MAX_LEVELS, &mRoot)) , mSize(0) {
         for (int lvl = 0; lvl < MAX_LEVELS; ++lvl) {
             mRoot.nextNodes[lvl] = &mNil;
         }
     }
 
-//    explicit SkipList(const Compare &comp, const Alloc &a = Alloc()) : mCompare(comp), mAlloc(a), SkipList() {
-//
-//    }
+    explicit SkipList(const Compare &comp, const Alloc &a = Alloc()) :
+            mRoot(t_Node(t_Value(std::numeric_limits<Key>::min(), ValueType()) , MAX_LEVELS, nullptr)),
+            mNil(t_Node::NIL(std::numeric_limits<Key>::max(), MAX_LEVELS, &mRoot)) , mSize(0), mCompare(comp), mAlloc(a) {
+
+    }
 
     SkipList(const SkipList &another) : mRoot(another.mRoot), mNil(another.mNil), mSize(another.mSize) {
-        t_Node **nodes = new t_Node*[mSize];
-        auto it = another.begin();
-        for (size_t i = 0; i < mSize; ++i) {
-            nodes[i] = new t_Node(*it.get());
-            ++it;
-        }
-
-        for (auto it = another.begin(); it != another.end(); ++it) {
-            t_Node *node{};
-        }
+        *this = another;
     }
 
     virtual ~SkipList() {
         clear();
     }
 
-//    SkipList &operator=(const SkipList &origVal) {
-//        if (this!=&origVal)
-//        {
-//            clear();
-//
-//            head.Initialize(NULL);
-//            maxLevel = origVal.maxLevel;
-//            size = origVal.size;
-//
-//            if (size == 0)
-//                currentPtr = NULL;
-//            else
-//            {
-//                // update is an array that, for each level in the new list, will
-//                //   point to the rightmost node in that level that we've created
-//                //   so far.
-//                Array<SkipNode*> update(0, maxLevel);
-//                update.Initialize(NULL);
-//
-//                // origTravPtr starts pointing to first node
-//                SkipNode *origTravPtr = origVal.head[0];
-//                *copyTravPtr;
-//
-//                while (origTravPtr != NULL)
-//                {
-//                    // create a new node that has the same height as the current node
-//                    //   in the origVal, and copy into it the origVal node's element
-//                    copyTravPtr = new SkipNode(origTravPtr->nodeTopLevel, maxLevel);
-//                    copyPtr->element = origTravPtr->element;
-//
-//                    // for all the levels that this node has...
-//                    for (int level = 0; level <= copyPtr->nodeTopLevel; level++)
-//                    {
-//                        // if this is the first node on this level, then head should
-//                        //  point to it; otherwise, the most recent prior node on this
-//                        //  level should point to it
-//                        if (update[level] == NULL)
-//                            head[level] = copyTravPtr;
-//                        else
-//                            (update[level]->ptrArray)[level] = copyTravPtr;
-//
-//                        // and now this is the "most recent node" for this level
-//                        update[level] = copyTravPtr;
-//                    }
-//
-//                    if (origVal.currentPtr == origTravPtr)
-//                        currentPtr = copyTravPtr;
-//
-//                    // move origTravPtr to the next node in the parameter skiplist
-//                    origTravPtr = (origTravPtr->ptrArray)[0];
-//                }
-//            }
-//        }
-//        return *this;
-//    }
+    SkipList &operator=(const SkipList &another) {
+        if (this!=&another) {
+            clear();
+            for (int lvl = 0; lvl < MAX_LEVELS; ++lvl) {
+                mRoot.nextNodes[lvl] = &mNil;
+            }
+
+            for (auto &&val : another) {
+                insert(val);
+            }
+        }
+        return *this;
+    }
 
     iterator begin() { return iterator(mRoot.nextNodes[0]); }
     const_iterator begin() const { return const_iterator(mRoot.nextNodes[0]); }
     iterator end() { return iterator(&mNil); }
     const_iterator end() const { return const_iterator(&mNil); }
 
+    reverse_iterator rbegin() { return ++reverse_iterator(&mNil); }
+    reverse_iterator rend() { return reverse_iterator(&mRoot); }
+    const_reverse_iterator rbegin() const { return ++const_reverse_iterator(&mNil); }
+    const_reverse_iterator rend() const { return const_reverse_iterator(&mRoot); }
+
     bool empty() const { return mSize == 0; }
     size_t size() const { return mSize; }
 
-    t_Value &operator[](const Key &key);
-    const t_Value &operator[](const Key &key) const;
-
-    t_Value &at(const Key &key) {
+    t_Value &operator[](const Key &key) {
         iterator res = find(key);
         if (res == end()) {
-            // TODO:
             throw std::out_of_range("at()");
         }
-        return {res.get()->value};
+        return res.get()->value;
     }
 
-    const ValueType &at(const Key &key) const;
+    const t_Value &operator[](const Key &key) const {
+        const_iterator res = find(key);
+        if (res == end()) {
+            throw std::out_of_range("at()");
+        }
+        return res.get()->value;
+    }
 
-    // TODO: iterator?
+    ValueType &at(const Key &key) {
+        iterator res = find(key);
+        if (res == end()) {
+            throw std::out_of_range("at()");
+        }
+        return {res.get()->value.second};
+    }
+
+    const ValueType &at(const Key &key) const {
+        const_iterator res = find(key);
+        if (res == end()) {
+            throw std::out_of_range("at()");
+        }
+        return {res.get()->value.second};
+    }
+
     std::pair<iterator, bool> insert(const t_Value &x) {
         t_Node *updateNodes[MAX_LEVELS];
         t_Node *cur = &mRoot;
@@ -150,10 +125,12 @@ public:
         // if already contain
         if (cur->nextNodes[0] && cur->nextNodes[0]->value.first == x.first) {
             cur->nextNodes[0]->value.second = x.second;
-            return {iterator(cur->nextNodes[0]), true};
+            return {iterator(cur->nextNodes[0]), false};
         }
         int lvl_new_node = randomLevel();
-        t_Node *cur_node = new t_Node(x, lvl_new_node);
+        void *ptr = mAlloc.allocate(1);
+        t_Node *cur_node = new(ptr) t_Node(x, lvl_new_node, updateNodes[0]);
+        updateNodes[0]->nextNodes[0]->mRoot = cur_node;
         for (int lvl = 0; lvl < lvl_new_node; ++lvl) {
             cur_node->nextNodes[lvl] = updateNodes[lvl]->nextNodes[lvl];
             updateNodes[lvl]->nextNodes[lvl] = cur_node;
@@ -167,7 +144,6 @@ public:
             erase(it.get()->value.first);
         }
     }
-
 
     void erase(const Key &key) {
         t_Node *updateNodes[MAX_LEVELS];
@@ -183,14 +159,13 @@ public:
             return;
         }
 
-
         t_Node *removedNode = cur->nextNodes[0];
         for (int lvl = 0; lvl < MAX_LEVELS; ++lvl) {
             if (updateNodes[lvl]->nextNodes[lvl] != removedNode) { break; }
             updateNodes[lvl]->nextNodes[lvl] = removedNode->nextNodes[lvl];
         }
-        // TODO: aloc
-        delete(removedNode);
+        updateNodes[0]->mRoot = updateNodes[0];
+        mAlloc.deallocate(removedNode, 1);
         --mSize;
     }
 
@@ -206,8 +181,14 @@ public:
 
     void swap(t_SkipList &another) {
         std::swap(mSize, another.mSize);
-        std::swap(mRoot, another.mRoot);
-        std::swap(mNil, another.mNil);
+        for (int lvl = 0; lvl < MAX_LEVELS; ++lvl) {
+            std::swap(mRoot.nextNodes[lvl], another.mRoot.nextNodes[lvl]);
+        }
+        std::vector<t_Node *> thisBeforeNodes = internalFindBeforeOnRange(mNil.value.first, MAX_LEVELS, 0);
+        std::vector<t_Node *> anotherBeforeNodes = another.internalFindBeforeOnRange(another.mNil.value.first, MAX_LEVELS, 0);
+        for (int i = 0; i < thisBeforeNodes.size(); ++i) {
+            std::swap(thisBeforeNodes[i]->nextNodes[i], anotherBeforeNodes[i]->nextNodes[i]);
+        }
         std::swap(mCompare, another.mCompare);
         std::swap(mAlloc, another.mAlloc);
     }
@@ -216,9 +197,10 @@ public:
         t_Node *cur = mRoot.nextNodes[0];
         while (cur != &mNil) {
             t_Node *next = cur->nextNodes[0];
-            delete(cur);
+            mAlloc.deallocate(cur, 1);
             cur = next;
         }
+        mSize = 0;
     }
 
     iterator find(const Key &key) {
@@ -228,12 +210,15 @@ public:
                iterator(before->nextNodes[0]) : iterator(&mNil);
     }
 
-    // TODO: how to avoid duplication
-    const_iterator find(const Key &key) const;
+    const_iterator find(const Key &key) const {
+        const t_Node *before = internalFindBefore(key);
+
+        return (before != &mNil && before->nextNodes[0]->value.first == key) ?
+               const_iterator(before->nextNodes[0]) : const_iterator(&mNil);
+    }
 
 private:
 
-    // TODO: ask how named
     t_Node *internalFindBefore(const Key &key) {
         t_Node *cur = &mRoot;
 
@@ -243,6 +228,34 @@ private:
             }
         }
         return cur;
+    }
+
+    const t_Node *internalFindBefore(const Key &key) const {
+        const t_Node *cur = &mRoot;
+
+        for (int lvl = MAX_LEVELS - 1; lvl >= 0; --lvl) {
+            while (cur->nextNodes[lvl] && Compare()(cur->nextNodes[lvl]->value.first, key)) {
+                cur = cur->nextNodes[lvl];
+            }
+        }
+        return cur;
+    }
+
+    std::vector<t_Node *> internalFindBeforeOnRange(const Key &key, int highest, int lower) {
+        std::vector<t_Node *> beforeNodes(highest - lower);
+
+        t_Node *cur = &mRoot;
+        for (int lvl = MAX_LEVELS - 1; lvl >= 0; --lvl) {
+            if (lvl < lower) { break; }
+            while (cur->nextNodes[lvl] && Compare()(cur->nextNodes[lvl]->value.first, key)) {
+                cur = cur->nextNodes[lvl];
+            }
+            if (lvl < highest) {
+                beforeNodes[lvl - lower] =cur;
+            }
+        }
+        assert(beforeNodes.size() == (highest - lower) );
+        return beforeNodes;
     }
 
     int randomLevel() {
