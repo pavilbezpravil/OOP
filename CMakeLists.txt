@@ -29,6 +29,6 @@ set(Trie_SRC Trie/Trie.h Trie/TrieIterator.h Trie/SubTrie.h Trie/TrieNode.h Trie
 add_executable(Trie ${Trie_SRC})
 target_link_libraries(Trie gtest gtest_main)
 
-set(ANNE_HELP_SRC AnneHelp/MySharedPtr.h AnneHelp/main.cpp)
-add_executable(ANNE_HELP ${ANNE_HELP_SRC})
-target_link_libraries(ANNE_HELP gtest gtest_main)
+set(SHARED_PTR_SRC SharedPtr/SharedPtr.h SharedPtr/main.cpp)
+add_executable(SHARED_PTR ${SHARED_PTR_SRC})
+target_link_libraries(SHARED_PTR gtest gtest_main)
